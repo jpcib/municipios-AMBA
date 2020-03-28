@@ -1,0 +1,74 @@
+install.packages("tidyverse")
+install.packages("ggplot2")
+install.packages("leaflet")
+install.packages("magrittr")
+install.packages("sp")
+install.packages("sf")
+install.packages("maps")
+install.packages("geojsonio")
+install.packages("rio")
+
+install.packages("caTools")
+install.packages("installr")
+install.packages("rgdal")
+install.packages("raster")
+install_formats()
+
+library(tidyverse)
+library(ggplot2)
+library(leaflet)
+library(magrittr)
+library(sp)
+library(sf)
+library(maps)
+library(rgdal)
+library(raster)
+library(readxl)
+library(rio)
+
+#creamos un mapa con leaflet
+m_prueba1 <- leaflet() %>% 
+    addTiles() %>% #agrega tiles default de OSM
+    addMarkers(lng = -58.445071, lat = -34.616823, popup = "Centro Geografico de la CABA")
+m_prueba1
+
+
+#Opciones de Inicializacion (van dentro de parentesis original, puede estar vacio y defaultea)
+
+m_prueba2 <- leaflet (options = leafletOptions(minZoom = 1, maxZoom = 18)) %>% #Asignar valores de minZoom y maxZoom *18 es el max
+  addTiles() %>% 
+  addMarkers(lng = -58.445071, lat = -34.616823, popup = "Centro Geografico de la CABA") %>% 
+  setMaxBounds(lng1 = -58.4311512, lat1 = -34.6038625, lng2 = -58.4689355, lat2 = -34.6483649) #Asignar rectangulo limites de visualizacion
+m_prueba2
+
+#agregamos poligonos
+#falta utilizar un poligono propiamente dicho. Probar delimitar el distrito tecnologico
+m_prueba2 <- leaflet (options = leafletOptions(minZoom = 1, maxZoom = 18)) %>% #Asignar valores de minZoom y maxZoom *18 es el max
+  addTiles() %>% 
+  addMarkers(lng = -58.445071, lat = -34.616823, popup = "Centro Geografico de la CABA") %>% 
+  addCircles(lng = -58.445071, lat = -34.616823, radius = 120) %>% 
+  setMaxBounds(lng1 = -58.4311512, lat1 = -34.6038625, lng2 = -58.4689355, lat2 = -34.6483649) #Asignar rectangulo limites de visualizacion
+m_prueba2
+
+
+
+#Creamos a partir de datos nacion shp, la capa de municipios en leaflet
+#
+
+municipios <- readOGR("municipiosshp/municipios.shp", encoding = "UTF-8")
+
+municipios_amba <- subset(municipios, IN1 %in% c("060028","060035","060091","060098","060119","060126",
+                                                 "060134","060245","060252","060260","060266","060270",
+                                                 "060274","060329","060364","060371","060408","060410",
+                                                 "060412","060427","060434","060441","060490","060497",
+                                                 "060525","060515","060560","060539","060568","060638",
+                                                 "060648","060658","060749","060756","060760","060778",
+                                                 "060805","060840","060861","060882","02","060441") )
+leaflet(municipios_amba) %>% 
+  addProviderTiles("Esri.WorldGrayCanvas") %>% 
+  setView(lng = -58.445071, lat = -34.616823, zoom = 12) %>% 
+  addPolygons(weight = 1, smoothFactor = 0.5,opacity = 1.0, fillColor = "#f7f7f7", fillOpacity = 0.5, highlightOptions = highlightOptions(color = "white", weight = 2, bringToFront = TRUE))
+#falta el save html
+view(municipios_amba)
+#Cargo la base de datos de municipios y mujeres y hago un join left
+
