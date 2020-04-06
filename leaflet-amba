@@ -52,23 +52,53 @@ m_prueba2
 
 
 
-#Creamos a partir de datos nacion shp, la capa de municipios en leaflet
-#
 
-municipios <- readOGR("municipiosshp/municipios.shp", encoding = "UTF-8")
+#Creamos ea partir de datos geograficos del IGN en formato shp, la capa de municipios
 
-municipios_amba <- subset(municipios, IN1 %in% c("060028","060035","060091","060098","060119","060126",
+
+municipioign <- readOGR("ign/municipio/municipio.shp", encoding = "UTF-8")
+
+municipios_amba_ign <- subset(municipioign, in1 %in% c("02","060028","060035","060091","060098","060119","060126",
                                                  "060134","060245","060252","060260","060266","060270",
                                                  "060274","060329","060364","060371","060408","060410",
                                                  "060412","060427","060434","060441","060490","060497",
-                                                 "060525","060515","060560","060539","060568","060638",
+                                                 "060515","060525","060539","060560","060568","060638",
                                                  "060648","060658","060749","060756","060760","060778",
-                                                 "060805","060840","060861","060882","02","060441") )
-leaflet(municipios_amba) %>% 
-  addProviderTiles("Esri.WorldGrayCanvas") %>% 
-  setView(lng = -58.445071, lat = -34.616823, zoom = 12) %>% 
-  addPolygons(weight = 1, smoothFactor = 0.5,opacity = 1.0, fillColor = "#f7f7f7", fillOpacity = 0.5, highlightOptions = highlightOptions(color = "white", weight = 2, bringToFront = TRUE))
-#falta el save html
-view(municipios_amba)
-#Cargo la base de datos de municipios y mujeres y hago un join left
+                                                 "060805","060840","060861","060882") )
 
+  colnames(municipios_amba_ign@data)[7]= "IN1"
+view(municipios_amba_ign@data)
+#Unimos el dataset de municipios_amba con los datos sobre intendencias y secretarias.
+secretarias_amba <- read_ods("secretarias.ods")
+str(secretarias_amba)
+
+secxmunicipios_ign <- merge(municipios_amba_ign, secretarias_amba, by="IN1")
+view(secxmunicipios_ign@data)
+str(secxmunicipios)
+
+#creo paletas de colores continuos
+pal1 <- colorNumeric(
+  palette = "PuRd",
+  domain = secxmunicipios$indice)
+pale <- GetColors(256, start = 0.0, end = 0.27, bias = 0.4, domain = secxmunicipios$indice)
+
+
+#armo un dataset con los centroides para cada municipio
+centros <- data.frame(gCentroid(secxmunicipios_ign,byid = TRUE, id = secxmunicipios_ign$nam))
+head(centros)
+centros$municipios <- row.names(centros)
+view(centros)
+#Create Dummy data
+set.seed(111)
+mydf <- data.frame(place = unique(secxmunicipios_ign$nam),
+                   value = sample.int(n = 1000, size = n_distinct(secxmunicipios_ign$Municipio), replace = TRUE))
+
+
+# Probar lapply labels directamente, sin addlabelonlymarkers, tal vez es la mejor opcion para mostrar data
+leaflet(secxmunicipios_ign) %>%
+  addProviderTiles("CartoDB.PositronNoLabels") %>%
+  setView(lng = -58.445071, lat = -34.616823, zoom = 9) %>%
+  addPolygons(weight = 1, smoothFactor = 0.5, fillOpacity = 0.7,
+              color = ~pale,
+              highlightOptions = highlightOptions(color = "red", weight = 6, bringToFront = TRUE),
+              label = ~nam)
